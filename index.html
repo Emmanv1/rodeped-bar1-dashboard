@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BAR 1 Q1 2025 — DepEd Region XIII KPI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f4f3ef;
+    --surface: #ffffff;
+    --surface2: #eceae4;
+    --border: #d6d3cb;
+    --text: #1a1917;
+    --text2: #6b6860;
+    --text3: #9b9890;
+    --accent: #1a4fa8;
+    --accent2: #0e7a5c;
+    --warn: #b85c00;
+    --danger: #c0272d;
+    --purple: #5b3fa8;
+    --gold: #b8860b;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid #0f3380;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-logo {
+    width: 34px; height: 34px; background: #fff;
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: 600; font-size: 13px;
+    color: var(--accent); letter-spacing: -0.5px; flex-shrink: 0;
+  }
+  .header-title { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
+  .header-sub { font-size: 11px; opacity: 0.7; margin-top: 1px; }
+  .header-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem; }
+
+  /* ── Filter bar ── */
+  .filterbar {
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap; margin-bottom: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 14px;
+  }
+  .filterbar label { font-size: 12px; color: var(--text2); font-weight: 500; }
+  select {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .filter-note { margin-left: auto; font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kpi-color, var(--accent));
+  }
+  .kpi-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .kpi-value { font-size: 28px; font-weight: 600; color: var(--text); font-family: 'IBM Plex Mono', monospace; line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex; gap: 2px; margin-bottom: 1rem;
+    background: var(--surface2);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    border: 1px solid var(--border);
+    width: fit-content;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 6px 16px;
+    border-radius: calc(var(--radius-lg) - 2px);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text2);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 500;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  /* ── Cards ── */
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.25rem;
+  }
+  .card-title {
+    font-size: 11px; font-weight: 600; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-title::before {
+    content: '';
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    text-align: left; padding: 7px 10px;
+    font-size: 10px; font-weight: 600;
+    color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em;
+    border-bottom: 2px solid var(--border);
+    background: var(--bg);
+  }
+  tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg); }
+  .num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 999px; font-size: 10px; font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .b-ok { background: #d4edda; color: #155724; }
+  .b-warn { background: #fff3cd; color: #856404; }
+  .b-na { background: var(--surface2); color: var(--text3); }
+  .b-blue { background: #cfe2ff; color: #084298; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text2); margin-bottom: 10px; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .ldot { width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+
+  /* ── Alert list ── */
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 12px; border-radius: var(--radius);
+    font-size: 12px; margin-bottom: 6px;
+  }
+  .a-warn { background: #fff8e6; border-left: 3px solid var(--warn); color: #5a3a00; }
+  .a-info { background: #e8f0fe; border-left: 3px solid var(--accent); color: #1a1e5a; }
+
+  /* ── Progress bar ── */
+  .pbar { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .pfill { height: 100%; border-radius: 3px; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    font-size: 11px; color: var(--text3);
+    padding: 2rem 1rem 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 0 1rem; }
+    .container { padding: 1rem; }
+    .kpi-value { font-size: 22px; }
+    .header-badge { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">D13</div>
+    <div>
+      <div class="header-title">DepEd Region XIII — BAR No. 1 Dashboard</div>
+      <div class="header-sub">Quarterly Physical Report of Operations · CY 2025</div>
+    </div>
+  </div>
+  <div class="header-badge">Q1 · As of March 2025</div>
+</header>
+
+<div class="container">
+
+  <!-- Filter bar -->
+  <div class="filterbar">
+    <label for="sdoSel">SDO Filter:</label>
+    <select id="sdoSel" onchange="applyFilter()">
+      <option value="ALL">All 12 SDOs — Regional Summary</option>
+      <option value="ADN">Agusan del Norte</option>
+      <option value="ADS">Agusan del Sur</option>
+      <option value="BAY">Bayugan City</option>
+      <option value="BIS">Bislig City</option>
+      <option value="BUT">Butuan City</option>
+      <option value="CBR">Cabadbaran City</option>
+      <option value="DIN">Dinagat Islands</option>
+      <option value="SIA">Siargao</option>
+      <option value="SC">Surigao City</option>
+      <option value="SDN">Surigao del Norte</option>
+      <option value="SDS">Surigao del Sur</option>
+      <option value="TAN">Tandag City</option>
+    </select>
+    <div class="filter-note">Department of Education · Office of the Secretary · UACS: 07 001 0300016</div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('overview',this)">Overview</button>
+    <button class="tab-btn" onclick="showTab('training',this)">Training</button>
+    <button class="tab-btn" onclick="showTab('infra',this)">Infrastructure</button>
+    <button class="tab-btn" onclick="showTab('nat',this)">NAT Performance</button>
+    <button class="tab-btn" onclick="showTab('alerts',this)">Alerts & Notes</button>
+  </div>
+
+  <!-- Overview Tab -->
+  <div id="tab-overview">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Teachers trained by SDO (Q1)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="trainChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Schools by level (LAC reporting)</div>
+        <div class="chart-wrap" style="height:260px"><canvas id="lacChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Classrooms constructed vs on-going (Q1)</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="classChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">BERF research proposals approved by SDO</div>
+      <div class="chart-wrap" style="height:160px"><canvas id="berfChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Training Tab -->
+  <div id="tab-training" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Personnel trained by category — Q1 2025</div>
+      <div class="legend">
+        <span><span class="ldot" style="background:#1a4fa8"></span>Teachers</span>
+        <span><span class="ldot" style="background:#0e7a5c"></span>Teaching-related</span>
+        <span><span class="ldot" style="background:#b85c00"></span>Non-teaching</span>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="trainCatChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Training accomplishment — detailed table</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>SDO</th>
+            <th class="num">Teachers</th>
+            <th class="num">Teaching-related</th>
+            <th class="num">Non-teaching</th>
+            <th class="num">Total trained</th>
+          </tr></thead>
+          <tbody id="trainBody"></tbody>
+          <tfoot id="trainFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infrastructure Tab -->
+  <div id="tab-infra" style="display:none">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Classroom construction (Q1)</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>SDO</th><th class="num">Constructed</th><th class="num">On-going</th></tr></thead>
+            <tbody id="infraBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Equipment distributed (Q1)</div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>SDO</th><th class="num">Sci/Math</th><th class="num">TVL</th><th class="num">ICT</th></tr></thead>
+            <tbody id="equipBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">BERF research proposals approved (Q1)</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>SDO</th><th class="num">Approved proposals</th><th>Education researches completed</th></tr></thead>
+          <tbody id="berfBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">RO — physical targets vs accomplishments (Q1)</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Indicator</th><th class="num">Q1 Target</th><th class="num">Q1 Actual</th><th class="num">Variance</th></tr></thead>
+          <tbody>
+            <tr><td>Policies reviewed</td><td class="num">2</td><td class="num">2</td><td class="num" style="color:#0e7a5c">0</td></tr>
+            <tr><td>New classrooms constructed</td><td class="num">60</td><td class="num">36</td><td class="num" style="color:#c0272d">−24</td></tr>
+            <tr><td>New classrooms on-going</td><td class="num">70</td><td class="num">71</td><td class="num" style="color:#0e7a5c">+1</td></tr>
+            <tr><td>Sci/Math equipment distributed</td><td class="num">210,286</td><td class="num">1,156</td><td class="num" style="color:#c0272d">−209,130</td></tr>
+            <tr><td>TVL equipment distributed</td><td class="num">2,887</td><td class="num">71</td><td class="num" style="color:#c0272d">−2,816</td></tr>
+            <tr><td>ICT equipment distributed</td><td class="num">712</td><td class="num">237</td><td class="num" style="color:#c0272d">−475</td></tr>
+            <tr><td>Total schools conducting LAC</td><td class="num">1,650</td><td class="num">968</td><td class="num" style="color:#c0272d">−682</td></tr>
+            <tr><td>Teachers &amp; staff trained</td><td class="num">8,828</td><td class="num">2,674</td><td class="num" style="color:#c0272d">−6,154</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAT Tab -->
+  <div id="tab-nat" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">NAT proficiency — regional actual vs target</div>
+      <div class="legend">
+        <span><span class="ldot" style="background:#9b9890"></span>Target</span>
+        <span><span class="ldot" style="background:#1a4fa8"></span>Elem Grade 6 actual</span>
+        <span><span class="ldot" style="background:#0e7a5c"></span>JHS Grade 10 actual</span>
+        <span><span class="ldot" style="background:#b85c00"></span>SHS Grade 12 actual</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="natChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">SDO-level NAT data — Q1 2025</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>SDO</th>
+            <th>Elem Grade 6</th>
+            <th>JHS Grade 10</th>
+            <th>SHS Grade 12</th>
+          </tr></thead>
+          <tbody id="natBody"></tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:10px;">
+        — = No data available &nbsp;|&nbsp; NDA = Not data available (SDO reported NDA) &nbsp;|&nbsp; Regional targets: Elem 46%, JHS 43.6%, SHS 45.3%
+      </p>
+    </div>
+  </div>
+
+  <!-- Alerts Tab -->
+  <div id="tab-alerts" style="display:none">
+    <div class="card">
+      <div class="card-title">Key observations & alerts — Q1 2025</div>
+      <div class="alert-item a-warn">
+        <div>
+          <strong>Infrastructure gap — classrooms constructed</strong><br>
+          Only 36 of 60 targeted classrooms were constructed in Q1 (60% accomplishment). Surigao del Sur contributed 30, Butuan City 6. Most SDOs reported zero completions.
+        </div>
+      </div>
+      <div class="alert-item a-warn">
+        <div>
+          <strong>Equipment distribution severely behind target</strong><br>
+          Sci/Math equipment: only 1,156 of 210,286 targeted units distributed (0.5%). TVL: 71 of 2,887. ICT: 237 of 712. Many SDOs reported no delivery in Q1.
+        </div>
+      </div>
+      <div class="alert-item a-warn">
+        <div>
+          <strong>Training accomplishment at 30% of annual target</strong><br>
+          2,674 personnel trained vs target of 8,828 for Q1. SDO Surigao del Norte led with 480 teachers trained. Surigao del Sur reported no training data.
+        </div>
+      </div>
+      <div class="alert-item a-warn">
+        <div>
+          <strong>LAC sessions — schools below target</strong><br>
+          968 schools reported conducting LAC vs target of 1,650–1,651. Several SDOs (Agusan del Sur, Surigao del Norte, Surigao del Sur) did not report school-level data.
+        </div>
+      </div>
+      <div class="alert-item a-info">
+        <div>
+          <strong>NAT data limited — only 2 SDOs with complete results</strong><br>
+          Siargao and Surigao del Sur provided NAT scores. Elem: regional actual 30.2% vs 46% target. JHS: 24.6% vs 43.6%. SHS: 34.7% vs 45.3%. Most SDOs reported NDA or no data yet.
+        </div>
+      </div>
+      <div class="alert-item a-info">
+        <div>
+          <strong>BERF proposals — 19 approved regionally</strong><br>
+          Tandag City led with 6 approvals, followed by Bislig City and Dinagat Islands with 4 each. 5 SDOs had no BERF proposals approved in Q1.
+        </div>
+      </div>
+      <div class="alert-item a-info">
+        <div>
+          <strong>Policies reviewed — on target</strong><br>
+          RO reviewed 2 policies in Q1 (HRDD & PPRD), matching the Q1 target of 2. Education researches completed and proposed policies to be determined in Q4.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  DepEd Region XIII · BAR No. 1 · Current Year Appropriations · Q1 CY 2025 &nbsp;|&nbsp;
+  Generated from BAR_1_2025.xlsx &nbsp;|&nbsp; Dashboard v1.0
+</footer>
+
+<script>
+const SDOS = [
+  {code:'ADN',name:'Agusan del Norte',teachers:81,trp:208,ntp:145,totalSchools:215,elem:166,jhs:48,shs:44,constructed:0,ongoing:10,sci:0,tvl:0,ict:0,berf:0,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'ADS',name:'Agusan del Sur',teachers:251,trp:0,ntp:0,totalSchools:0,elem:0,jhs:0,shs:0,constructed:0,ongoing:23,sci:798,tvl:71,ict:35,berf:0,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'BAY',name:'Bayugan City',teachers:135,trp:173,ntp:228,totalSchools:85,elem:57,jhs:15,shs:13,constructed:0,ongoing:6,sci:0,tvl:0,ict:113,berf:0,research:0,natElem:'NDA',natJhs:'NDA',natShs:'NDA'},
+  {code:'BIS',name:'Bislig City',teachers:347,trp:88,ntp:55,totalSchools:70,elem:51,jhs:19,shs:14,constructed:0,ongoing:0,sci:0,tvl:0,ict:0,berf:4,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'BUT',name:'Butuan City',teachers:205,trp:0,ntp:13,totalSchools:193,elem:106,jhs:50,shs:37,constructed:6,ongoing:0,sci:0,tvl:0,ict:0,berf:0,research:1,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'CBR',name:'Cabadbaran City',teachers:192,trp:0,ntp:0,totalSchools:0,elem:0,jhs:0,shs:0,constructed:0,ongoing:10,sci:189,tvl:0,ict:89,berf:2,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'DIN',name:'Dinagat Islands',teachers:13,trp:166,ntp:128,totalSchools:142,elem:107,jhs:5,shs:30,constructed:0,ongoing:0,sci:0,tvl:0,ict:0,berf:4,research:1,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'SIA',name:'Siargao',teachers:101,trp:0,ntp:54,totalSchools:145,elem:120,jhs:25,shs:23,constructed:0,ongoing:18,sci:0,tvl:0,ict:0,berf:2,research:0,natElem:'41.1%',natJhs:'NDA',natShs:'26.3%'},
+  {code:'SC',name:'Surigao City',teachers:10,trp:43,ntp:94,totalSchools:87,elem:0,jhs:0,shs:0,constructed:0,ongoing:4,sci:169,tvl:0,ict:0,berf:1,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'SDN',name:'Surigao del Norte',teachers:480,trp:0,ntp:0,totalSchools:0,elem:0,jhs:0,shs:0,constructed:0,ongoing:0,sci:0,tvl:0,ict:0,berf:0,research:0,natElem:'-',natJhs:'-',natShs:'-'},
+  {code:'SDS',name:'Surigao del Sur',teachers:0,trp:0,ntp:0,totalSchools:0,elem:0,jhs:0,shs:0,constructed:30,ongoing:0,sci:0,tvl:0,ict:0,berf:0,research:0,natElem:'19.2%',natJhs:'24.6%',natShs:'43.1%'},
+  {code:'TAN',name:'Tandag City',teachers:150,trp:31,ntp:15,totalSchools:31,elem:27,jhs:10,shs:3,constructed:0,ongoing:0,sci:0,tvl:0,ict:0,berf:6,research:0,natElem:'NDA',natJhs:'NDA',natShs:'NDA'},
+];
+
+let activeSDO = 'ALL';
+let charts = {};
+
+function getData() {
+  return activeSDO === 'ALL' ? SDOS : SDOS.filter(s => s.code === activeSDO);
+}
+
+function shortName(s) {
+  return s.name.length > 14 ? s.name.replace('Surigao del','Sur.del').replace('Agusan del','Ag.del').replace(' City','').replace(' Islands','') : s.name;
+}
+
+function applyFilter() {
+  activeSDO = document.getElementById('sdoSel').value;
+  buildKPIs();
+  rebuildCharts();
+  buildTables();
+}
+
+function buildKPIs() {
+  const d = getData();
+  const totalTrained = d.reduce((s,x)=>s+x.teachers+x.trp+x.ntp,0);
+  const totalSchools = d.reduce((s,x)=>s+x.totalSchools,0);
+  const constructed = d.reduce((s,x)=>s+x.constructed,0);
+  const ongoing = d.reduce((s,x)=>s+x.ongoing,0);
+  const berf = d.reduce((s,x)=>s+x.berf,0);
+  const sci = d.reduce((s,x)=>s+x.sci,0);
+  const colors = ['var(--accent)','var(--accent2)','var(--warn)','var(--purple)','var(--gold)','var(--danger)'];
+  const kpis = [
+    {label:'Total personnel trained',value:totalTrained.toLocaleString(),sub:'Q1 2025 accomplishment',c:colors[0]},
+    {label:'Schools reporting LAC',value:totalSchools.toLocaleString(),sub:'vs RO target: 1,650',c:colors[1]},
+    {label:'Classrooms constructed',value:constructed,sub:ongoing+' more on-going',c:colors[2]},
+    {label:'BERF proposals approved',value:berf,sub:'Research approvals Q1',c:colors[3]},
+    {label:'Sci/Math equipment',value:sci.toLocaleString(),sub:'Units distributed Q1',c:colors[4]},
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
+    <div class="kpi" style="--kpi-color:${k.c}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function rebuildCharts() {
+  const d = getData();
+  const labels = d.map(s=>shortName(s));
+
+  destroyChart('trainChart');
+  destroyChart('lacChart');
+  destroyChart('classChart');
+  destroyChart('berfChart');
+  destroyChart('trainCatChart');
+  destroyChart('natChart');
+
+  const commonOpts = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ticks:{font:{size:10},color:'#9b9890',maxRotation:45}}, y:{ticks:{font:{size:10},color:'#9b9890'}} }};
+
+  charts.trainChart = new Chart(document.getElementById('trainChart'),{
+    type:'bar', data:{labels, datasets:[{label:'Teachers trained', data:d.map(s=>s.teachers), backgroundColor:'#1a4fa8', borderRadius:4}]},
+    options:{...commonOpts}
+  });
+
+  charts.lacChart = new Chart(document.getElementById('lacChart'),{
+    type:'bar', data:{labels, datasets:[
+      {label:'Elementary',data:d.map(s=>s.elem),backgroundColor:'#1a4fa8',borderRadius:2},
+      {label:'JHS',data:d.map(s=>s.jhs),backgroundColor:'#0e7a5c',borderRadius:2},
+      {label:'SHS',data:d.map(s=>s.shs),backgroundColor:'#b85c00',borderRadius:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},scales:{x:{stacked:true,ticks:{font:{size:10},color:'#9b9890',maxRotation:45}},y:{stacked:true,ticks:{font:{size:10},color:'#9b9890'}}}}
+  });
+
+  charts.classChart = new Chart(document.getElementById('classChart'),{
+    type:'bar', data:{labels, datasets:[
+      {label:'Constructed',data:d.map(s=>s.constructed),backgroundColor:'#0e7a5c',borderRadius:3},
+      {label:'On-going',data:d.map(s=>s.ongoing),backgroundColor:'#b85c00',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},scales:{x:{ticks:{font:{size:10},color:'#9b9890',maxRotation:45}},y:{ticks:{font:{size:10},color:'#9b9890'}}}}
+  });
+
+  charts.berfChart = new Chart(document.getElementById('berfChart'),{
+    type:'bar', data:{labels, datasets:[{label:'BERF proposals',data:d.map(s=>s.berf),backgroundColor:d.map(s=>s.berf>0?'#5b3fa8':'#d6d3cb'),borderRadius:4}]},
+    options:{...commonOpts}
+  });
+
+  charts.trainCatChart = new Chart(document.getElementById('trainCatChart'),{
+    type:'bar', data:{labels, datasets:[
+      {label:'Teachers',data:d.map(s=>s.teachers),backgroundColor:'#1a4fa8',borderRadius:3},
+      {label:'Teaching-related',data:d.map(s=>s.trp),backgroundColor:'#0e7a5c',borderRadius:3},
+      {label:'Non-teaching',data:d.map(s=>s.ntp),backgroundColor:'#b85c00',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},color:'#9b9890',maxRotation:45}},y:{ticks:{font:{size:10},color:'#9b9890'}}}}
+  });
+
+  charts.natChart = new Chart(document.getElementById('natChart'),{
+    type:'bar',
+    data:{
+      labels:['Elem Grade 6','JHS Grade 10','SHS Grade 12'],
+      datasets:[
+        {label:'Target',data:[0.46,0.4363,0.4527],backgroundColor:'#d6d3cb',borderRadius:4},
+        {label:'Actual (Regional)',data:[0.30165,0.2462,0.3467],backgroundColor:['#1a4fa8','#0e7a5c','#b85c00'],borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:10,boxHeight:10}}},scales:{x:{ticks:{font:{size:12},color:'#9b9890'}},y:{max:0.55,ticks:{font:{size:11},color:'#9b9890',callback:v=>(v*100).toFixed(0)+'%'}}}}
+  });
+}
+
+function buildTables() {
+  const d = getData();
+
+  // Training table
+  let tot = {t:0,trp:0,ntp:0};
+  document.getElementById('trainBody').innerHTML = d.map(s=>{
+    const total = s.teachers+s.trp+s.ntp;
+    tot.t+=s.teachers; tot.trp+=s.trp; tot.ntp+=s.ntp;
+    return `<tr>
+      <td>${s.name}</td>
+      <td class="num">${s.teachers||'—'}</td>
+      <td class="num">${s.trp||'—'}</td>
+      <td class="num">${s.ntp||'—'}</td>
+      <td class="num" style="font-weight:600">${total||'—'}</td>
+    </tr>`;
+  }).join('');
+  const grandTotal = tot.t+tot.trp+tot.ntp;
+  document.getElementById('trainFoot').innerHTML=`<tr style="background:var(--bg);font-weight:600">
+    <td>TOTAL</td><td class="num">${tot.t.toLocaleString()}</td><td class="num">${tot.trp.toLocaleString()}</td><td class="num">${tot.ntp.toLocaleString()}</td><td class="num">${grandTotal.toLocaleString()}</td>
+  </tr>`;
+
+  // Infra table
+  document.getElementById('infraBody').innerHTML = d.map(s=>`
+    <tr>
+      <td>${s.name}</td>
+      <td class="num">${s.constructed||'—'}</td>
+      <td class="num">${s.ongoing||'—'}</td>
+    </tr>`).join('');
+
+  // Equipment table
+  document.getElementById('equipBody').innerHTML = d.map(s=>`
+    <tr>
+      <td>${s.name}</td>
+      <td class="num">${s.sci||'—'}</td>
+      <td class="num">${s.tvl||'—'}</td>
+      <td class="num">${s.ict||'—'}</td>
+    </tr>`).join('');
+
+  // BERF table
+  document.getElementById('berfBody').innerHTML = d.map(s=>`
+    <tr>
+      <td>${s.name}</td>
+      <td class="num">${s.berf ? '<span class="badge b-blue">'+s.berf+'</span>' : '—'}</td>
+      <td class="num">${s.research||'—'}</td>
+    </tr>`).join('');
+
+  // NAT table
+  function natBadge(v){
+    if(v==='-') return '<span class="badge b-na">—</span>';
+    if(v==='NDA') return '<span class="badge b-warn">NDA</span>';
+    return '<span class="badge b-ok">'+v+'</span>';
+  }
+  document.getElementById('natBody').innerHTML = d.map(s=>`
+    <tr>
+      <td>${s.name}</td>
+      <td>${natBadge(s.natElem)}</td>
+      <td>${natBadge(s.natJhs)}</td>
+      <td>${natBadge(s.natShs)}</td>
+    </tr>`).join('');
+}
+
+function showTab(name, btn) {
+  ['overview','training','infra','nat','alerts'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display = (t===name)?'block':'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Init
+buildKPIs();
+rebuildCharts();
+buildTables();
+</script>
+</body>
+</html>
